@@ -17,6 +17,7 @@ public class EventService {
     private static final Map<String, String> BQ_RFID_EVENTS_BY_LCP = new HashMap<String, String>() {
 //TODO JOIN TABLES
         {
+            //FIXME: improvement to exclude events that occurred in the past 2 hours (SLA)
             put("np", "SELECT video_url, tag_id, reader_id, upc, event_timestamp, curr_ts, " +
                     "product_price, location, exit_event, event_status, product_image_url, " +
                     "product_name, store, matched, check_count, signal FROM `rfid-data-display.rfid_table.event_copy`" +
@@ -43,22 +44,28 @@ public class EventService {
     };
 
     //write event to BQ for analytics purposes
-    private static final Map<String, String> BQ_EVENT_LCP = new HashMap<String, String>() {
+    private static final Map<String, String> BQ_UPDATE_EVENT_LCP = new HashMap<String, String>() {
         {//FIXME CHANGE TO UPDATES
-            put("np", "INSERT INTO `rfid-data-display.rfid_table.event_copy` "
-                    + "(CURR_TS, READER_ID, EVENT_STATUS, EVENT_TIMESTAMP, EXIT_EVENT, "
-                    + "LOCATION, PRODUCT_IMAGE_URL, PRODUCT_NAME, PRODUCT_PRICE, UPC, STORE, "
-                    + " TAG_ID, VIDEO_URL, MATCHED, REGISTER) "
-                    + "VALUES ('@currTime', '@readerId', '@eventStatus', '@eventTimestamp', @exitEvent, "
-                    + "'@location', '@productImageUrl', '@productName', @productPrice, '@upc', "
-                    + "'@store', '@tagId', '@videoUrl', @matched, '@register')");
-            put("pr", "INSERT INTO `rfid-data-display.rfid_table.event_copy` "
-                    + "(CURR_TS, READER_ID, EVENT_STATUS, EVENT_TIMESTAMP, EXIT_EVENT, "
-                    + "LOCATION, PRODUCT_IMAGE_URL, PRODUCT_NAME, PRODUCT_PRICE, UPC, STORE, "
-                    + " TAG_ID, VIDEO_URL, MATCHED, REGISTER) "
-                    + "VALUES ('@currTime', '@readerId', '@eventStatus', '@eventTimestamp', @exitEvent, "
-                    + "'@location', '@productImageUrl', '@productName', @productPrice, '@upc', "
-                    + "'@store', '@tagId', '@videoUrl', @matched, '@register')");
+            put("np", "UPDATE `rfid-data-display.rfid_table.event_copy` "
+                    + "SET MATCHED ='@matched', check_count = '@check_count' "
+                    + "WHERE tag_id = '@tag_id'");
+            put("pr", "UPDATE `rfid-data-display.rfid_table.event_copy` "
+                    + "SET MATCHED ='@matched', check_count = '@check_count' "
+                    + "WHERE tag_id = '@tag_id'");
+//            put("np", "INSERT INTO `rfid-data-display.rfid_table.event_copy` "
+//                    + "(CURR_TS, READER_ID, EVENT_STATUS, EVENT_TIMESTAMP, EXIT_EVENT, "
+//                    + "LOCATION, PRODUCT_IMAGE_URL, PRODUCT_NAME, PRODUCT_PRICE, UPC, STORE, "
+//                    + " TAG_ID, VIDEO_URL, MATCHED, REGISTER) "
+//                    + "VALUES ('@currTime', '@readerId', '@eventStatus', '@eventTimestamp', @exitEvent, "
+//                    + "'@location', '@productImageUrl', '@productName', @productPrice, '@upc', "
+//                    + "'@store', '@tagId', '@videoUrl', @matched, '@register')");
+//            put("pr", "INSERT INTO `rfid-data-display.rfid_table.event_copy` "
+//                    + "(CURR_TS, READER_ID, EVENT_STATUS, EVENT_TIMESTAMP, EXIT_EVENT, "
+//                    + "LOCATION, PRODUCT_IMAGE_URL, PRODUCT_NAME, PRODUCT_PRICE, UPC, STORE, "
+//                    + " TAG_ID, VIDEO_URL, MATCHED, REGISTER) "
+//                    + "VALUES ('@currTime', '@readerId', '@eventStatus', '@eventTimestamp', @exitEvent, "
+//                    + "'@location', '@productImageUrl', '@productName', @productPrice, '@upc', "
+//                    + "'@store', '@tagId', '@videoUrl', @matched, '@register')");
         }
     };
 
@@ -161,16 +168,16 @@ public class EventService {
                     (eventRow.get(1).getValue() != null ? eventRow.get(1).getValue().toString() : null),
                     (eventRow.get(2).getValue() != null ? eventRow.get(2).getValue().toString(): null),
                     (eventRow.get(12).getValue() != null ? eventRow.get(12).getValue().toString(): null),
-                    eventTime,
-                    Integer.parseInt("56"),
-                    "TOOL_RENTAL",
-                    true,
-                    "313708118953",
-                    "Saw",
-                    Double.parseDouble("150.33"),
-                    false,
-                    0,
-                    false);
+                    eventTime,//FIXME
+                    (eventRow.get(15).getValue() != null ? Integer.parseInt(eventRow.get(15).getValue().toString()): null),
+                    (eventRow.get(7).getValue() != null ? eventRow.get(7).getValue().toString(): null),
+                    (eventRow.get(8).getValue() != null ? Boolean.parseBoolean(eventRow.get(8).getValue().toString()): null),
+                    (eventRow.get(3).getValue() != null ? eventRow.get(3).getValue().toString(): null),
+                    (eventRow.get(11).getValue() != null ? eventRow.get(11).getValue().toString(): null),
+                    (eventRow.get(6).getValue() != null ? Double.parseDouble(eventRow.get(6).getValue().toString()): null),
+                    false,//FIXME
+                    (eventRow.get(14).getValue() != null ? Integer.parseInt(eventRow.get(14).getValue().toString()): null),
+                    (eventRow.get(13).getValue() != null ? Boolean.parseBoolean(eventRow.get(13).getValue().toString()): null));
 
         }
         // (eventRow.get(15).getValue() != null ? eventRow.get(15).getValue().toString(): null)
@@ -201,7 +208,8 @@ public class EventService {
                         testStringToReturn.append("AFTER PARSE   ");
 
                         //return rfidEvent.toString();//FIXME for testing only
-
+                        testStringToReturn.append("ENTITY VALUE BEFORE matched: "+rfidEvent.getMatched()+"   ");
+                        testStringToReturn.append("ENTITY VALUE BEFORE checkedCounter: "+rfidEvent.getCheckedCounter()+"   ");
                         //build event entity with enrichments
                         Entity saveEntity = eventService.analyzeEvent(rfidEvent, lcp);
 
@@ -224,10 +232,13 @@ public class EventService {
 
                        // testStringToReturn.append(saveEntity.toString());//FIXME for testing only no idea why this doesnt work
                         testStringToReturn.append("AFTER PRINT OUT   ");
+                        //update event_copy: matched & check_count; //FIXME: process this call in a batch manner
+                        testStringToReturn.append(updateEventToBQ(saveEntity, lcp, testStringToReturn));
+                        //updateEventToBQ(saveEntity, lcp);
                         //write event to datastore
                         //writeEventToDS(saveEntity);//TODO maybe?
                         //write event to big query
-                        writeEventToBQ(saveEntity, lcp);//TODO
+//                        writeEventToBQ(saveEntity, lcp);//TODO
                     } catch (Exception ex) {
                         // create the error row
 //                        try {
@@ -335,30 +346,48 @@ public class EventService {
      * @param lcp   life cycle phase
      * @throws Exception on error
      */
-    private static void writeEventToBQ(Entity event, String lcp) throws Exception {
+//    private static void writeEventToBQ(Entity event, String lcp) throws Exception {
+////TODO write to multiple locations
+//        //LOG.info(String.format("Writing event to bigquery.  Tagid:   %s ", (String) event.getProperty("tag_id")));//FIXME
+//        DateTime currTs = new DateTime((Date) event.getProperty("curr_ts"));
+//        DateTime eventTs = new DateTime((Date) event.getProperty("event_timestamp"));
+//
+//        String queryString = BQ_EVENT_LCP.get(lcp).replace("@currTime", currTs.toString())
+//                .replace("@readerId", (String) event.getProperty("reader_id"))
+//                .replace("@eventStatus", (String) event.getProperty("event_status"))
+//                .replace("@eventTimestamp", eventTs.toString())
+//                .replace("@exitEvent", Boolean.toString((Boolean) event.getProperty("exit_event")))
+//                .replace("@location", (String) event.getProperty("location"))
+//                .replace("@productImageUrl", (String) event.getProperty("product_image_url"))
+//                .replace("@productName", (String) event.getProperty("product_name"))
+//                .replace("@productPrice", Double.toString((Double) event.getProperty("product_price")))
+//                .replace("@upc", (String) event.getProperty("upc"))
+//                .replace("@tagId", (String) event.getProperty("tag_id"))
+//                .replace("@store", (String) event.getProperty("store"))
+//                .replace("@videoUrl", (String) event.getProperty("video_url"))
+//                .replace("@matched", Boolean.toString((Boolean) event.getProperty("matched")))//FIXME is this coming across?
+//                .replace("@register", (String) event.getProperty("register"));
+//
+//
+//        // Instantiates a client
+//        TableResult result = runNamed(queryString);
+//    }
+
+    private String updateEventToBQ(Entity event, String lcp, StringBuilder stringBuilder) throws Exception {
 //TODO write to multiple locations
         //LOG.info(String.format("Writing event to bigquery.  Tagid:   %s ", (String) event.getProperty("tag_id")));//FIXME
-        DateTime currTs = new DateTime((Date) event.getProperty("curr_ts"));
-        DateTime eventTs = new DateTime((Date) event.getProperty("event_timestamp"));
 
-        String queryString = BQ_EVENT_LCP.get(lcp).replace("@currTime", currTs.toString())
-                .replace("@readerId", (String) event.getProperty("reader_id"))
-                .replace("@eventStatus", (String) event.getProperty("event_status"))
-                .replace("@eventTimestamp", eventTs.toString())
-                .replace("@exitEvent", Boolean.toString((Boolean) event.getProperty("exit_event")))
-                .replace("@location", (String) event.getProperty("location"))
-                .replace("@productImageUrl", (String) event.getProperty("product_image_url"))
-                .replace("@productName", (String) event.getProperty("product_name"))
-                .replace("@productPrice", Double.toString((Double) event.getProperty("product_price")))
-                .replace("@upc", (String) event.getProperty("upc"))
-                .replace("@tagId", (String) event.getProperty("tag_id"))
-                .replace("@store", (String) event.getProperty("store"))
-                .replace("@videoUrl", (String) event.getProperty("video_url"))
+        String queryString = BQ_UPDATE_EVENT_LCP.get(lcp)
                 .replace("@matched", Boolean.toString((Boolean) event.getProperty("matched")))//FIXME is this coming across?
-                .replace("@register", (String) event.getProperty("register"));
+                .replace("@check_count", Integer.toString((Integer)event.getProperty("checkedCounter")))
+                .replace("@tag_id", (String) event.getProperty("tag_id"));
 
+stringBuilder.append(queryString);
 
         // Instantiates a client
-        TableResult result = runNamed(queryString);
+        runNamed(queryString);
+        return stringBuilder.toString();
     }
+
+
 }
