@@ -1,21 +1,28 @@
 package com.example.appengine.demos.springboot;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import services.EventService;
+import com.example.appengine.demos.springboot.services.impl.EventServiceImpl;
 
 
 @RestController
 public class HelloworldController {
-  @GetMapping("/")
-  public String hello() {
+
+    @Autowired
+    public EventServiceImpl eventService;
+
+      @GetMapping("/")
+      public String hello() {
+
 
       try{
-          new EventService().processEventData("np");
+          eventService.processEventData("np");
           return "We made it!";
       }
       catch (Exception e) {
+          e.printStackTrace();
           return "Exception in hello()";
       }
 

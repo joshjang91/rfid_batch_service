@@ -1,4 +1,4 @@
-package dao;
+package com.example.appengine.demos.springboot.model;
 
 
 import org.joda.time.DateTime;
