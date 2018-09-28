@@ -12,7 +12,8 @@ public class HelloworldController {
   public String hello() {
 
       try{
-          return new EventService().processEventData("np");
+          new EventService().processEventData("np");
+          return "We made it!";
       }
       catch (Exception e) {
           return "Exception in hello()";
