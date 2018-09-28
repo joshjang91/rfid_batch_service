@@ -9,13 +9,19 @@ public interface EventServiceConstants {
         //TODO JOIN TABLES
         {
             //FIXME: improvement to exclude events that occurred in the past 2 hours (SLA)
-            put("np", "SELECT video_url, tag_id, reader_id, upc, event_timestamp, curr_ts, " +
-                    "product_price, location, exit_event, event_status, product_image_url, " +
-                    "product_name, store, matched, check_count, signal, asciiTag FROM `rfid-data-display.rfid_table.event_copy`" +
+            put("np", "SELECT event.video_url, event.tag_id, reader.reader_id, tag.upc, event.event_timestamp, event.curr_ts, " +
+                    "tag.current_retail_amount, reader.location, reader.exit, event.event_status, event.product_image_url, " +
+                    "tag.product_description, event.store, event.matched, event.check_count, event.signal " +
+                    "FROM `rfid-data-display.rfid_table.event_copy` event " +
+                    "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.tag_id " +
+                    "LEFT JOIN `rfid-data-display.rfid_table.reader` reader ON reader.reader_id = event.reader_id " +
                     "WHERE check_count < 2 AND matched = false");
-            put("pr", "SELECT video_url, tag_id, reader_id, upc, event_timestamp, curr_ts, " +
-                    "product_price, location, exit_event, event_status, product_image_url, " +
-                    "product_name, store, matched, check_count, signal, asciiTag FROM `rfid-data-display.rfid_table.event_copy`" +
+            put("pr", "SELECT event.video_url, event.tag_id, reader.reader_id, tag.upc, event_timestamp, event.curr_ts, " +
+                    "tag.current_retail_amount, reader.location, reader.exit, event.event_status, event.product_image_url, " +
+                    "tag.product_description, event.store, event.matched, event.check_count, event.signal " +
+                    "FROM `rfid-data-display.rfid_table.event_copy` event " +
+                    "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.tag_id " +
+                    "LEFT JOIN `rfid-data-display.rfid_table.reader` reader ON reader.reader_id = event.reader_id " +
                     "WHERE check_count < 2 AND matched = false");
         }
     };
@@ -43,6 +49,18 @@ public interface EventServiceConstants {
             put("pr", "UPDATE `rfid-data-display.rfid_table.event_copy` "
                     + "SET MATCHED =@matched, check_count = @check_count "
                     + "WHERE tag_id = '@tag_id'");
+        }
+    };
+
+    //write error to BigQuery for analytics
+    Map<String, String> BQ_ERROR_LCP = new HashMap<String, String>() {
+        {
+            put("np", "INSERT INTO `rfid-data-display.rfid_table.error` "
+                    + "(CURR_TS, ERROR, EVENT_DATA) "
+                    + "VALUES ('@currTime', '@error', '@event')");
+            put("pr", "INSERT INTO `rfid-data-display.rfid_table.error` "
+                    + "(CURR_TS, ERROR, EVENT_DATA) "
+                    + "VALUES ('@currTime', '@error', '@event')");
         }
     };
 

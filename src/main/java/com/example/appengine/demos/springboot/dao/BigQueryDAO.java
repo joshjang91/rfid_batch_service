@@ -1,19 +1,26 @@
 package com.example.appengine.demos.springboot.dao;
 
+import com.example.appengine.demos.springboot.model.RFIDEvent;
 import com.google.appengine.api.datastore.Entity;
 import com.google.cloud.bigquery.*;
 import com.example.appengine.demos.springboot.constants.EventServiceConstants;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.ISODateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Component
 public class BigQueryDAO {
 
     @Autowired
     BigQueryUtilities bigQueryUtilities;
+
+    private static final Logger LOG = Logger.getLogger(RFIDEvent.class.getName());
 
     public BigQueryDAO (BigQueryUtilities bigQueryUtilities) {
         this.bigQueryUtilities = bigQueryUtilities;
@@ -32,7 +39,7 @@ public class BigQueryDAO {
     public HashMap<String, Object> lookupMatchingSales(String storeNumber, String startTime,
                                                         String endTime, String upc, String lcp) throws Exception {
 
-//        LOG.info(String.format("Query sales for store: %s start time: %s end time: %s upd: %s lcp: %s", storeNumber, startTime, endTime, upc, lcp));//FIXME
+        LOG.info(String.format("Query sales for store: %s start time: %s end time: %s upd: %s lcp: %s", storeNumber, startTime, endTime, upc, lcp));
         HashMap<String, Object> matchedData = new HashMap<String, Object>();
         //TODO call sales API
         String queryString = EventServiceConstants.BQ_SALES_BY_LCP.get(lcp).replace("@storeNumber", storeNumber)
@@ -43,7 +50,7 @@ public class BigQueryDAO {
         TableResult result = bigQueryUtilities.runNamed(queryString);
 
         if (result.getTotalRows() > 0) {
-            //LOG.info("Found a sale for tag");//FIXME
+            LOG.info("Found a sale for tag");
             for (List<FieldValue> rowDt : result.iterateAll()) {
                 if (rowDt.get(0).getValue() != null) {
                     matchedData.put("register", rowDt.get(8).getValue().toString());
@@ -55,13 +62,30 @@ public class BigQueryDAO {
     }
 
     public void updateEventToBQ(Entity event, String lcp) throws Exception {
-        //TODO write to multiple locations
-        //LOG.info(String.format("Writing event to bigquery.  Tagid:   %s ", (String) event.getProperty("tag_id")));//FIXME
+        LOG.info(String.format("Writing event to bigquery.  Tagid:   %s ", (String) event.getProperty("tag_id")));
 
         String queryString = EventServiceConstants.BQ_UPDATE_EVENT_LCP.get(lcp)
                 .replace("@matched", Boolean.toString((Boolean) event.getProperty("matched")))
                 .replace("@check_count", Integer.toString((Integer)event.getProperty("checkedCounter")))
                 .replace("@tag_id", (String) event.getProperty("tag_id"));
+
+        // Instantiates a client
+        bigQueryUtilities.runNamed(queryString);
+    }
+
+    /**
+     * write error event to big query
+     *
+     * @param error error which occurred
+     * @param event event entity to be written
+     * @param lcp   life cycle phase
+     * @throws Exception on error
+     */
+    public void writeErrorToBQ(String error, RFIDEvent event, String lcp) throws Exception {
+        String queryString = EventServiceConstants.BQ_ERROR_LCP.get(lcp).replace("@currTime",
+                ISODateTimeFormat.dateTime().print(new DateTime(DateTimeZone.UTC)))
+                .replace("@error", error)
+                .replace("@event", event.toString());
 
         // Instantiates a client
         bigQueryUtilities.runNamed(queryString);

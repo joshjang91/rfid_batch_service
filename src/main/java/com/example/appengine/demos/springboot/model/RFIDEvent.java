@@ -18,13 +18,12 @@ public class RFIDEvent {
     private String upc;
     private String productName;
     private Double currRetailAmt;
-    private Boolean asciiTag;
     private int checkedCounter;
     private Boolean matched;
 
 
     public RFIDEvent(String tagId, String receiverId, String storeNumber, DateTime eventTime, Integer signal, String location,
-                     Boolean exitReader, String upc, String productName, Double currRetailAmt, Boolean asciiTag, int checkedCounter, Boolean matched) {
+                     Boolean exitReader, String upc, String productName, Double currRetailAmt, int checkedCounter, Boolean matched) {
         this.tagId = tagId;
         this.receiverId = receiverId;
         this.storeNumber = storeNumber;
@@ -35,7 +34,6 @@ public class RFIDEvent {
         this.upc = upc;
         this.productName = productName;
         this.currRetailAmt = currRetailAmt;
-        this.asciiTag = asciiTag;
         this.checkedCounter = checkedCounter;
         this.matched = matched;
 
@@ -119,14 +117,6 @@ public class RFIDEvent {
 
     public void setCurrRetailAmt(Double currRetailAmt) {
         this.currRetailAmt = currRetailAmt;
-    }
-
-    public Boolean getAsciiTag() {
-        return asciiTag;
-    }
-
-    public void setAsciiTag(Boolean asciiTag) {
-        this.asciiTag = asciiTag;
     }
 
     public String toString()

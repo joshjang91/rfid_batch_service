@@ -11,6 +11,7 @@ import org.joda.time.format.DateTimeFormatter;
 
 import java.util.*;
 import com.example.appengine.demos.springboot.model.RFIDEvent;
+import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +23,11 @@ public class EventServiceImpl implements EventServiceInterface {
     @Autowired
     public DatastoreDAO datastoreDAO;
 
+    private static final Logger LOG = Logger.getLogger(RFIDEvent.class.getName());
 
     public void processEventData(String lcp)  {
+        //convert any existing hex tag values to ascii
+        //TODO function to convert tags from hex to ascii
         //read messages from the subscription
         TableResult eventList = bigQueryDAO.getEventData(lcp);
         if (eventList != null && eventList.getTotalRows() > 0) {
@@ -36,6 +40,13 @@ public class EventServiceImpl implements EventServiceInterface {
                         //parse to json
                         rfidEvent = parseRFIDEvent(rowDt);
 
+                        if(rfidEvent.getUpc() == null){
+                            throw new Exception(String.format("no matching tag data found for tag id: %s  store: %s ", rfidEvent.getTagId(), rfidEvent.getStoreNumber()));
+                        }
+                        if(rfidEvent.getReceiverId() == null){
+                            throw new Exception(String.format("no matching readers found for tag id: %s  store: %s ", rfidEvent.getTagId(), rfidEvent.getStoreNumber()));
+                        }
+
                         //build event entity with enrichments
                         Entity saveEntity = analyzeEvent(rfidEvent, lcp);
                         //update event_copy: matched & check_count;
@@ -47,11 +58,11 @@ public class EventServiceImpl implements EventServiceInterface {
                         // create the error row
                         try {
                             ex.printStackTrace();
-                            //LOG.severe(String.format("Got exception processing event.  Exception: %s. Event: %s ", ex.getMessage(), event));//FIXME
-                            //writeErrorToBQ(ex.getMessage(), event, lcp);//FIXME
+                            LOG.severe(String.format("Got exception processing event.  Exception: %s. Event: %s ", ex.getMessage(), rfidEvent));
+                            bigQueryDAO.writeErrorToBQ(ex.getMessage(), rfidEvent, lcp);
                         } catch (Exception bqex) {
                             bqex.printStackTrace();
-                            //LOG.severe(String.format("Got exception writing to BQ Error table.  Exception: %s. Event: %s ", bqex.getMessage(), event));//FIXME
+                            LOG.severe(String.format("Got exception writing to BQ Error table.  Exception: %s. Event: %s ", bqex.getMessage(), rfidEvent));
                         }
                     }
                 }
@@ -76,7 +87,6 @@ public class EventServiceImpl implements EventServiceInterface {
                     (eventRow.get(3).getValue() != null ? eventRow.get(3).getValue().toString(): null),
                     (eventRow.get(11).getValue() != null ? eventRow.get(11).getValue().toString(): null),
                     (eventRow.get(6).getValue() != null ? Double.parseDouble(eventRow.get(6).getValue().toString()): null),
-                    (eventRow.get(16).getValue() != null ? Boolean.parseBoolean(eventRow.get(16).getValue().toString()): null),
                     (eventRow.get(14).getValue() != null ? Integer.parseInt(eventRow.get(14).getValue().toString()): null),
                     (eventRow.get(13).getValue() != null ? Boolean.parseBoolean(eventRow.get(13).getValue().toString()): null));
 
@@ -106,11 +116,6 @@ public class EventServiceImpl implements EventServiceInterface {
             if (register != null) {
                 event.setMatched(true);
             }
-        }
-
-        //convert ascii tag from hex if necessary
-        if (event.getAsciiTag()) {
-            event.setTagId(hexToAscii(event.getTagId()));
         }
 
         //increment check counter - regardless of match
