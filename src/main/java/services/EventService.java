@@ -1,5 +1,6 @@
 package services;
 
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.cloud.bigquery.*;
@@ -8,7 +9,9 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.FileInputStream;
 import java.util.*;
 import dao.RFIDEvent;
 
@@ -47,10 +50,10 @@ public class EventService {
     private static final Map<String, String> BQ_UPDATE_EVENT_LCP = new HashMap<String, String>() {
         {//FIXME CHANGE TO UPDATES
             put("np", "UPDATE `rfid-data-display.rfid_table.event_copy` "
-                    + "SET MATCHED ='@matched', check_count = '@check_count' "
+                    + "SET MATCHED =@matched, check_count = @check_count "
                     + "WHERE tag_id = '@tag_id'");
             put("pr", "UPDATE `rfid-data-display.rfid_table.event_copy` "
-                    + "SET MATCHED ='@matched', check_count = '@check_count' "
+                    + "SET MATCHED =@matched, check_count = @check_count "
                     + "WHERE tag_id = '@tag_id'");
 //            put("np", "INSERT INTO `rfid-data-display.rfid_table.event_copy` "
 //                    + "(CURR_TS, READER_ID, EVENT_STATUS, EVENT_TIMESTAMP, EXIT_EVENT, "
@@ -82,9 +85,13 @@ public class EventService {
 
 
     public static TableResult runNamed(final String queryString)
-            throws InterruptedException {
+            throws InterruptedException, FileNotFoundException, IOException {
 
-        BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
+        //BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
+        BigQuery bigquery =
+                BigQueryOptions.newBuilder().setCredentials(ServiceAccountCredentials.fromStream(
+                        new FileInputStream("/Users/iwh0902/projects/secrets/RFID-data-display-mockevent.json"))).build().getService();
+
         QueryJobConfiguration queryConfig =
                 QueryJobConfiguration.newBuilder(queryString)
                         .setUseLegacySql(false)
@@ -234,6 +241,7 @@ public class EventService {
                         testStringToReturn.append("AFTER PRINT OUT   ");
                         //update event_copy: matched & check_count; //FIXME: process this call in a batch manner
                         testStringToReturn.append(updateEventToBQ(saveEntity, lcp, testStringToReturn));
+                        testStringToReturn.append(">>>>>GOT OUT OF UPDATE");
                         //updateEventToBQ(saveEntity, lcp);
                         //write event to datastore
                         //writeEventToDS(saveEntity);//TODO maybe?
@@ -377,15 +385,17 @@ public class EventService {
 //TODO write to multiple locations
         //LOG.info(String.format("Writing event to bigquery.  Tagid:   %s ", (String) event.getProperty("tag_id")));//FIXME
 
+        stringBuilder.append("~~~BEFORE QUERY UPDATE~~~");
         String queryString = BQ_UPDATE_EVENT_LCP.get(lcp)
                 .replace("@matched", Boolean.toString((Boolean) event.getProperty("matched")))//FIXME is this coming across?
                 .replace("@check_count", Integer.toString((Integer)event.getProperty("checkedCounter")))
                 .replace("@tag_id", (String) event.getProperty("tag_id"));
-
+        stringBuilder.append("~~~AFTER QUERY UPDATE~~~");
 stringBuilder.append(queryString);
 
         // Instantiates a client
         runNamed(queryString);
+        stringBuilder.append("<AFTER RUN QUERY>");
         return stringBuilder.toString();
     }
 
