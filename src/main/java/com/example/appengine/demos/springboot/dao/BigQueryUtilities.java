@@ -14,7 +14,7 @@ public class BigQueryUtilities {
 
     public TableResult runNamed(final String queryString) throws InterruptedException, IOException {
 
-        //BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();//FIXME
+        //BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();//FIXME needs to be a configuration if keeping local capability
         BigQuery bigquery =
                 BigQueryOptions.newBuilder().setCredentials(ServiceAccountCredentials.fromStream(
                         new FileInputStream(EventServiceConstants.LOCAL_CREDENTIALS_PATH))).build().getService();

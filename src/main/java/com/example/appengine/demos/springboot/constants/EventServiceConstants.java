@@ -11,11 +11,11 @@ public interface EventServiceConstants {
             //FIXME: improvement to exclude events that occurred in the past 2 hours (SLA)
             put("np", "SELECT video_url, tag_id, reader_id, upc, event_timestamp, curr_ts, " +
                     "product_price, location, exit_event, event_status, product_image_url, " +
-                    "product_name, store, matched, check_count, signal FROM `rfid-data-display.rfid_table.event_copy`" +
+                    "product_name, store, matched, check_count, signal, asciiTag FROM `rfid-data-display.rfid_table.event_copy`" +
                     "WHERE check_count < 2 AND matched = false");
             put("pr", "SELECT video_url, tag_id, reader_id, upc, event_timestamp, curr_ts, " +
                     "product_price, location, exit_event, event_status, product_image_url, " +
-                    "product_name, store, matched, check_count, signal FROM `rfid-data-display.rfid_table.event_copy`" +
+                    "product_name, store, matched, check_count, signal, asciiTag FROM `rfid-data-display.rfid_table.event_copy`" +
                     "WHERE check_count < 2 AND matched = false");
         }
     };

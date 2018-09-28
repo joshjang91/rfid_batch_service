@@ -38,10 +38,10 @@ public class EventServiceImpl implements EventServiceInterface {
 
                         //build event entity with enrichments
                         Entity saveEntity = analyzeEvent(rfidEvent, lcp);
-                        //update event_copy: matched & check_count; //FIXME: process this call in a batch manner
+                        //update event_copy: matched & check_count;
                         bigQueryDAO.updateEventToBQ(saveEntity, lcp);
                         //write event to datastore
-                        datastoreDAO.writeEventToDS(saveEntity);//FIXME
+                        datastoreDAO.writeEventToDS(saveEntity);
 
                     } catch (Exception ex) {
                         // create the error row
@@ -63,21 +63,20 @@ public class EventServiceImpl implements EventServiceInterface {
     private RFIDEvent parseRFIDEvent(List<FieldValue> eventRow) {
         //TODO build out remaining fields
         if (eventRow != null) {
-            DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-            DateTime eventTime = formatter.parseDateTime("2017-05-08 14:54:46");
-//            DateTime eventTime = formatter.parseDateTime(eventRow.get(4).getValue().toString());//FIXME
+            DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss z");
+            DateTime eventTime = formatter.parseDateTime(eventRow.get(4).getValue().toString());
             return new RFIDEvent(
                     (eventRow.get(1).getValue() != null ? eventRow.get(1).getValue().toString() : null),
                     (eventRow.get(2).getValue() != null ? eventRow.get(2).getValue().toString(): null),
                     (eventRow.get(12).getValue() != null ? eventRow.get(12).getValue().toString(): null),
-                    eventTime,//FIXME
+                    eventTime,
                     (eventRow.get(15).getValue() != null ? Integer.parseInt(eventRow.get(15).getValue().toString()): null),
                     (eventRow.get(7).getValue() != null ? eventRow.get(7).getValue().toString(): null),
                     (eventRow.get(8).getValue() != null ? Boolean.parseBoolean(eventRow.get(8).getValue().toString()): null),
                     (eventRow.get(3).getValue() != null ? eventRow.get(3).getValue().toString(): null),
                     (eventRow.get(11).getValue() != null ? eventRow.get(11).getValue().toString(): null),
                     (eventRow.get(6).getValue() != null ? Double.parseDouble(eventRow.get(6).getValue().toString()): null),
-                    false,//FIXME
+                    (eventRow.get(16).getValue() != null ? Boolean.parseBoolean(eventRow.get(16).getValue().toString()): null),
                     (eventRow.get(14).getValue() != null ? Integer.parseInt(eventRow.get(14).getValue().toString()): null),
                     (eventRow.get(13).getValue() != null ? Boolean.parseBoolean(eventRow.get(13).getValue().toString()): null));
 
@@ -88,12 +87,7 @@ public class EventServiceImpl implements EventServiceInterface {
     private Entity analyzeEvent(RFIDEvent event, String lcp) throws Exception {
 
         String register = null;
-        //DateTime eventTime;
 
-        //FIXME
-        //convert event time to proper format for datastore/bq
-        //DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        //eventTime = formatter.parseDateTime(event.getEventTime());
         Date eventTs = new Date(event.getEventTime().getMillis());
 
         //query sales if exit reader
