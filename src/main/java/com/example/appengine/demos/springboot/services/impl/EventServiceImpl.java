@@ -28,6 +28,7 @@ public class EventServiceImpl implements EventServiceInterface {
     public void processEventData(String lcp)  {
         //convert any existing hex tag values to ascii
         //TODO function to convert tags from hex to ascii
+        bigQueryDAO.convertHexToAscii(lcp);
         //read messages from the subscription
         TableResult eventList = bigQueryDAO.getEventData(lcp);
         if (eventList != null && eventList.getTotalRows() > 0) {
@@ -72,7 +73,6 @@ public class EventServiceImpl implements EventServiceInterface {
 
 
     private RFIDEvent parseRFIDEvent(List<FieldValue> eventRow) {
-        //TODO build out remaining fields
         if (eventRow != null) {
             DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss z");
             DateTime eventTime = formatter.parseDateTime(eventRow.get(4).getValue().toString());
@@ -101,7 +101,7 @@ public class EventServiceImpl implements EventServiceInterface {
         Date eventTs = new Date(event.getEventTime().getMillis());
 
         //query sales if exit reader
-        if (event.getExitReader()) {
+        if (event.getExitReader()) {//TODO exclude these in the query
             DateTime endTime = event.getEventTime().plusMinutes(10);
             // *** create the formatter with the "no-millis" format - is there a better way to do this???
             DateTimeFormatter formatterNoMillis = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
@@ -165,17 +165,6 @@ public class EventServiceImpl implements EventServiceInterface {
         }
 
         return eventEntity;
-    }
-
-
-    private String hexToAscii(String hexStr) {
-        StringBuilder output = new StringBuilder("");
-
-        for (int i = 0; i < hexStr.length(); i += 2) {
-            String str = hexStr.substring(i, i + 2);
-            output.append((char) Integer.parseInt(str, 16));
-        }
-        return output.toString();
     }
 
 }

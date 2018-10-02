@@ -5,24 +5,54 @@ import java.util.Map;
 
 public interface EventServiceConstants {
 
+
+    Map<String, String> BQ_CONVERT_HEX_TO_ASCII_BY_LCP = new HashMap<String, String>() {
+        {
+            put("np", "UPDATE `rfid-data-display.rfid_table.event_copy` event_copy " +
+                    "SET ascii_tag_id = " +
+                    "  (SELECT " +
+                    "    (CASE " +
+                    "      WHEN tag.tag_id IS NOT NULL THEN event.tag_id " +
+                    "      ELSE CAST(FROM_HEX(event.tag_id) AS STRING) " +
+                    "    END) AS ascii_tag_id " +
+                    "    FROM `rfid-data-display.rfid_table.event_copy` event " +
+                    "    LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.tag_id " +
+                    "    WHERE event_copy.name_id = event.name_id " +
+                    "   ) " +
+                    "WHERE event_copy.ascii_tag_id IS NULL;");
+            put("pr",  "UPDATE `rfid-data-display.rfid_table.event_copy` event_copy " +
+                    "SET ascii_tag_id = " +
+                    "  (SELECT " +
+                    "    (CASE " +
+                    "      WHEN tag.tag_id IS NOT NULL THEN event.tag_id " +
+                    "      ELSE CAST(FROM_HEX(event.tag_id) AS STRING) " +
+                    "    END) AS ascii_tag_id " +
+                    "    FROM `rfid-data-display.rfid_table.event_copy` event " +
+                    "    LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.tag_id " +
+                    "    WHERE event_copy.name_id = event.name_id " +
+                    "   ) " +
+                    "WHERE event_copy.ascii_tag_id IS NULL;");
+
+        }
+    };
+
     Map<String, String> BQ_RFID_EVENTS_BY_LCP = new HashMap<String, String>() {
-        //TODO JOIN TABLES
         {
             //FIXME: improvement to exclude events that occurred in the past 2 hours (SLA)
             put("np", "SELECT event.video_url, event.tag_id, reader.reader_id, tag.upc, event.event_timestamp, event.curr_ts, " +
                     "tag.current_retail_amount, reader.location, reader.exit, event.event_status, event.product_image_url, " +
                     "tag.product_description, event.store, event.matched, event.check_count, event.signal " +
                     "FROM `rfid-data-display.rfid_table.event_copy` event " +
-                    "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.tag_id " +
+                    "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.ascii_tag_id " +
                     "LEFT JOIN `rfid-data-display.rfid_table.reader` reader ON reader.reader_id = event.reader_id " +
-                    "WHERE check_count < 2 AND matched = false");
+                    "WHERE check_count < 2 AND matched = false AND exit_event = true");
             put("pr", "SELECT event.video_url, event.tag_id, reader.reader_id, tag.upc, event_timestamp, event.curr_ts, " +
                     "tag.current_retail_amount, reader.location, reader.exit, event.event_status, event.product_image_url, " +
                     "tag.product_description, event.store, event.matched, event.check_count, event.signal " +
                     "FROM `rfid-data-display.rfid_table.event_copy` event " +
-                    "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.tag_id " +
+                    "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.ascii_tag_id " +
                     "LEFT JOIN `rfid-data-display.rfid_table.reader` reader ON reader.reader_id = event.reader_id " +
-                    "WHERE check_count < 2 AND matched = false");
+                    "WHERE check_count < 2 AND matched = false AND exit_event = true");
         }
     };
 
@@ -42,7 +72,7 @@ public interface EventServiceConstants {
 
     //write event to BQ for analytics purposes
     Map<String, String> BQ_UPDATE_EVENT_LCP = new HashMap<String, String>() {
-        {//FIXME CHANGE TO UPDATES
+        {
             put("np", "UPDATE `rfid-data-display.rfid_table.event_copy` "
                     + "SET MATCHED =@matched, check_count = @check_count "
                     + "WHERE tag_id = '@tag_id'");

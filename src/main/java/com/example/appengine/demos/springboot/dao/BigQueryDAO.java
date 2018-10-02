@@ -41,7 +41,7 @@ public class BigQueryDAO {
 
         LOG.info(String.format("Query sales for store: %s start time: %s end time: %s upd: %s lcp: %s", storeNumber, startTime, endTime, upc, lcp));
         HashMap<String, Object> matchedData = new HashMap<String, Object>();
-        //TODO call sales API
+
         String queryString = EventServiceConstants.BQ_SALES_BY_LCP.get(lcp).replace("@storeNumber", storeNumber)
                 .replace("@startTime", startTime)
                 .replace("@endTime", endTime)
@@ -90,4 +90,16 @@ public class BigQueryDAO {
         // Instantiates a client
         bigQueryUtilities.runNamed(queryString);
     }
+
+    public TableResult convertHexToAscii(String lcp){
+        TableResult result = null;
+        try {
+            result = bigQueryUtilities.runNamed(EventServiceConstants.BQ_CONVERT_HEX_TO_ASCII_BY_LCP.get(lcp));
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+
+    }
+
 }
