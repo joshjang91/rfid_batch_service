@@ -8,6 +8,7 @@ convience class for events sent by RFID readers
  */
 public class RFIDEvent {
 
+    private String uniqueEventId;
     private String tagId;
     private String receiverId;
     private String storeNumber;
@@ -22,8 +23,9 @@ public class RFIDEvent {
     private Boolean matched;
 
 
-    public RFIDEvent(String tagId, String receiverId, String storeNumber, DateTime eventTime, Integer signal, String location,
+    public RFIDEvent(String uniqueEventId, String tagId, String receiverId, String storeNumber, DateTime eventTime, Integer signal, String location,
                      Boolean exitReader, String upc, String productName, Double currRetailAmt, int checkedCounter, Boolean matched) {
+        this.uniqueEventId = uniqueEventId;
         this.tagId = tagId;
         this.receiverId = receiverId;
         this.storeNumber = storeNumber;
@@ -38,6 +40,8 @@ public class RFIDEvent {
         this.matched = matched;
 
     }
+
+    public String getUniqueEventId() { return uniqueEventId; }
 
     public Integer getSignal() {
         return signal;

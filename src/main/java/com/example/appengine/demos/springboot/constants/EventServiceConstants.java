@@ -41,14 +41,14 @@ public interface EventServiceConstants {
             //FIXME: improvement to exclude events that occurred in the past 2 hours (SLA)
             put("np", "SELECT event.video_url, event.tag_id, reader.reader_id, tag.upc, event.event_timestamp, event.curr_ts, " +
                     "tag.current_retail_amount, reader.location, reader.exit, event.event_status, event.product_image_url, " +
-                    "tag.product_description, event.store, event.matched, event.check_count, event.signal " +
+                    "tag.product_description, event.store, event.matched, event.check_count, event.signal, event.name_id " +
                     "FROM `rfid-data-display.rfid_table.event_copy` event " +
                     "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.ascii_tag_id " +
                     "LEFT JOIN `rfid-data-display.rfid_table.reader` reader ON reader.reader_id = event.reader_id " +
                     "WHERE check_count < 2 AND matched = false");
             put("pr", "SELECT event.video_url, event.tag_id, reader.reader_id, tag.upc, event_timestamp, event.curr_ts, " +
                     "tag.current_retail_amount, reader.location, reader.exit, event.event_status, event.product_image_url, " +
-                    "tag.product_description, event.store, event.matched, event.check_count, event.signal " +
+                    "tag.product_description, event.store, event.matched, event.check_count, event.signal, event.name_id " +
                     "FROM `rfid-data-display.rfid_table.event_copy` event " +
                     "LEFT JOIN `rfid-data-display.rfid_table.tag` tag ON tag.tag_id = event.ascii_tag_id " +
                     "LEFT JOIN `rfid-data-display.rfid_table.reader` reader ON reader.reader_id = event.reader_id " +

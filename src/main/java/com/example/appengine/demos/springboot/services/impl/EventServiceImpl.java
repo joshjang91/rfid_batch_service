@@ -27,7 +27,6 @@ public class EventServiceImpl implements EventServiceInterface {
 
     public void processEventData(String lcp)  {
         //convert any existing hex tag values to ascii
-        //TODO function to convert tags from hex to ascii
         bigQueryDAO.convertHexToAscii(lcp);
         //read messages from the subscription
         TableResult eventList = bigQueryDAO.getEventData(lcp);
@@ -77,6 +76,7 @@ public class EventServiceImpl implements EventServiceInterface {
             DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss z");
             DateTime eventTime = formatter.parseDateTime(eventRow.get(4).getValue().toString());
             return new RFIDEvent(
+                    (eventRow.get(16).getValue() != null ? eventRow.get(16).getValue().toString() : null),
                     (eventRow.get(1).getValue() != null ? eventRow.get(1).getValue().toString() : null),
                     (eventRow.get(2).getValue() != null ? eventRow.get(2).getValue().toString(): null),
                     (eventRow.get(12).getValue() != null ? eventRow.get(12).getValue().toString(): null),
@@ -122,6 +122,7 @@ public class EventServiceImpl implements EventServiceInterface {
         event.setCheckedCounter(event.getCheckedCounter()+1);
 
         return createEventEntity(
+                event.getUniqueEventId(),
                 event.getReceiverId(),
                 eventTs,
                 event.getExitReader(),
@@ -138,11 +139,12 @@ public class EventServiceImpl implements EventServiceInterface {
     }
 
 
-    private Entity createEventEntity(String readerId, Date eventTime, Boolean exitReader, String location, String productName,
+    private Entity createEventEntity(String uniqueEventId, String readerId, Date eventTime, Boolean exitReader, String location, String productName,
                                     Double currRetailAmt, String upc, String storeNumber,
                                     String tagId, String register, int checkedCounter, Boolean matched) {
-        Entity eventEntity = new Entity("event", UUID.randomUUID().toString());
+        Entity eventEntity = new Entity("event", uniqueEventId);
         //reader info
+        eventEntity.setProperty("name_id", uniqueEventId);
         eventEntity.setProperty("curr_ts", new Date());
         eventEntity.setProperty("reader_id", readerId);
         eventEntity.setProperty("event_status", "new");
