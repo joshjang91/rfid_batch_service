@@ -26,10 +26,10 @@ public class BigQueryDAO {
         this.bigQueryUtilities = bigQueryUtilities;
     }
 
-    public TableResult getEventData(String lcp){
+    public TableResult getEventData(){
         TableResult result = null;
         try {
-            result = bigQueryUtilities.runNamed(EventServiceConstants.BQ_RFID_EVENTS_BY_LCP.get(lcp));
+            result = bigQueryUtilities.runNamed(EventServiceConstants.BQ_RFID_EVENTS);
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -37,12 +37,12 @@ public class BigQueryDAO {
     }
 
     public HashMap<String, Object> lookupMatchingSales(String storeNumber, String startTime,
-                                                        String endTime, String upc, String lcp) throws Exception {
+                                                        String endTime, String upc) throws Exception {
 
-        LOG.info(String.format("Query sales for store: %s start time: %s end time: %s upd: %s lcp: %s", storeNumber, startTime, endTime, upc, lcp));
+        LOG.info(String.format("Query sales for store: %s start time: %s end time: %s upd: %s", storeNumber, startTime, endTime, upc));
         HashMap<String, Object> matchedData = new HashMap<String, Object>();
 
-        String queryString = EventServiceConstants.BQ_SALES_BY_LCP.get(lcp).replace("@storeNumber", storeNumber)
+        String queryString = EventServiceConstants.BQ_SALES.replace("@storeNumber", storeNumber)
                 .replace("@startTime", startTime)
                 .replace("@endTime", endTime)
                 .replace("@upc", upc);
@@ -61,10 +61,10 @@ public class BigQueryDAO {
         return matchedData;
     }
 
-    public void updateEventToBQ(Entity event, String lcp) throws Exception {
+    public void updateEventToBQ(Entity event) throws Exception {
         LOG.info(String.format("Writing event to bigquery.  Tagid:   %s ", (String) event.getProperty("tag_id")));
 
-        String queryString = EventServiceConstants.BQ_UPDATE_EVENT_LCP.get(lcp)
+        String queryString = EventServiceConstants.BQ_UPDATE_EVENT
                 .replace("@matched", Boolean.toString((Boolean) event.getProperty("matched")))
                 .replace("@check_count", Integer.toString((Integer)event.getProperty("checkedCounter")))
                 .replace("@tag_id", (String) event.getProperty("tag_id"));
@@ -78,11 +78,10 @@ public class BigQueryDAO {
      *
      * @param error error which occurred
      * @param event event entity to be written
-     * @param lcp   life cycle phase
      * @throws Exception on error
      */
-    public void writeErrorToBQ(String error, RFIDEvent event, String lcp) throws Exception {
-        String queryString = EventServiceConstants.BQ_ERROR_LCP.get(lcp).replace("@currTime",
+    public void writeErrorToBQ(String error, RFIDEvent event) throws Exception {
+        String queryString = EventServiceConstants.BQ_ERROR.replace("@currTime",
                 ISODateTimeFormat.dateTime().print(new DateTime(DateTimeZone.UTC)))
                 .replace("@error", error)
                 .replace("@event", event.toString());
@@ -91,10 +90,10 @@ public class BigQueryDAO {
         bigQueryUtilities.runNamed(queryString);
     }
 
-    public TableResult convertHexToAscii(String lcp){
+    public TableResult convertHexToAscii(){
         TableResult result = null;
         try {
-            result = bigQueryUtilities.runNamed(EventServiceConstants.BQ_CONVERT_HEX_TO_ASCII_BY_LCP.get(lcp));
+            result = bigQueryUtilities.runNamed(EventServiceConstants.BQ_CONVERT_HEX_TO_ASCII);
         }catch (Exception e) {
             e.printStackTrace();
         }

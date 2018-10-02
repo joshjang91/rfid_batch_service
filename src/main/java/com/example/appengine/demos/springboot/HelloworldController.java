@@ -18,7 +18,7 @@ public class HelloworldController {
 
 
       try{
-          eventService.processEventData("np");
+          eventService.processEventData();
           return "We made it!";
       }
       catch (Exception e) {

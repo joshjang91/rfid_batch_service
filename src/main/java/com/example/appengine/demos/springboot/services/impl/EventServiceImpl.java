@@ -25,11 +25,11 @@ public class EventServiceImpl implements EventServiceInterface {
 
     private static final Logger LOG = Logger.getLogger(RFIDEvent.class.getName());
 
-    public void processEventData(String lcp)  {
+    public void processEventData()  {
         //convert any existing hex tag values to ascii
-        bigQueryDAO.convertHexToAscii(lcp);
+        bigQueryDAO.convertHexToAscii();
         //read messages from the subscription
-        TableResult eventList = bigQueryDAO.getEventData(lcp);
+        TableResult eventList = bigQueryDAO.getEventData();
         if (eventList != null && eventList.getTotalRows() > 0) {
             for (List<FieldValue> rowDt : eventList.iterateAll()) {
                 if (rowDt.get(0).getValue() != null) {
@@ -48,9 +48,9 @@ public class EventServiceImpl implements EventServiceInterface {
                         }
 
                         //build event entity with enrichments
-                        Entity saveEntity = analyzeEvent(rfidEvent, lcp);
+                        Entity saveEntity = analyzeEvent(rfidEvent);
                         //update event_copy: matched & check_count;
-                        bigQueryDAO.updateEventToBQ(saveEntity, lcp);
+                        bigQueryDAO.updateEventToBQ(saveEntity);
                         //write event to datastore
                         datastoreDAO.writeEventToDS(saveEntity);
 
@@ -59,7 +59,7 @@ public class EventServiceImpl implements EventServiceInterface {
                         try {
                             ex.printStackTrace();
                             LOG.severe(String.format("Got exception processing event.  Exception: %s. Event: %s ", ex.getMessage(), rfidEvent));
-                            bigQueryDAO.writeErrorToBQ(ex.getMessage(), rfidEvent, lcp);
+                            bigQueryDAO.writeErrorToBQ(ex.getMessage(), rfidEvent);
                         } catch (Exception bqex) {
                             bqex.printStackTrace();
                             LOG.severe(String.format("Got exception writing to BQ Error table.  Exception: %s. Event: %s ", bqex.getMessage(), rfidEvent));
@@ -94,7 +94,7 @@ public class EventServiceImpl implements EventServiceInterface {
         return null;
     }
 
-    private Entity analyzeEvent(RFIDEvent event, String lcp) throws Exception {
+    private Entity analyzeEvent(RFIDEvent event) throws Exception {
 
         String register = null;
 
@@ -109,7 +109,7 @@ public class EventServiceImpl implements EventServiceInterface {
             DateTime startTime = event.getEventTime().minusMinutes(20);
             String startTimeNoMillis = startTime.toString(formatterNoMillis);
 
-            HashMap<String, Object> salesProps = bigQueryDAO.lookupMatchingSales(event.getStoreNumber(), startTimeNoMillis, endTimeNoMillis, event.getUpc(), lcp);
+            HashMap<String, Object> salesProps = bigQueryDAO.lookupMatchingSales(event.getStoreNumber(), startTimeNoMillis, endTimeNoMillis, event.getUpc());
             register = (String) salesProps.get("register");
 
             //populate the data we got from sales due to a match
