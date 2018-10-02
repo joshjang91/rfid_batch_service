@@ -101,7 +101,7 @@ public class EventServiceImpl implements EventServiceInterface {
         Date eventTs = new Date(event.getEventTime().getMillis());
 
         //query sales if exit reader
-        if (event.getExitReader()) {//TODO exclude these in the query
+        if (event.getExitReader()) {
             DateTime endTime = event.getEventTime().plusMinutes(10);
             // *** create the formatter with the "no-millis" format - is there a better way to do this???
             DateTimeFormatter formatterNoMillis = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
