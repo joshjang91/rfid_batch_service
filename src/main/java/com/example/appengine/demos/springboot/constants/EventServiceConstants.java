@@ -1,7 +1,5 @@
 package com.example.appengine.demos.springboot.constants;
 
-import java.util.HashMap;
-import java.util.Map;
 
 public interface EventServiceConstants {
 
