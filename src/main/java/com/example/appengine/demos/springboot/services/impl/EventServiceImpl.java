@@ -33,7 +33,6 @@ public class EventServiceImpl implements EventServiceInterface {
         if (eventList != null && eventList.getTotalRows() > 0) {
             for (List<FieldValue> rowDt : eventList.iterateAll()) {
                 if (rowDt.get(0).getValue() != null) {
-
                     RFIDEvent rfidEvent = null;
 
                     try {
@@ -46,7 +45,6 @@ public class EventServiceImpl implements EventServiceInterface {
                         if(rfidEvent.getReceiverId() == null){
                             throw new Exception(String.format("no matching readers found for tag id: %s  store: %s ", rfidEvent.getTagId(), rfidEvent.getStoreNumber()));
                         }
-
                         //build event entity with enrichments
                         Entity saveEntity = analyzeEvent(rfidEvent);
                         //update event_copy: matched & check_count;
@@ -76,12 +74,11 @@ public class EventServiceImpl implements EventServiceInterface {
             DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss z");
             DateTime eventTime = formatter.parseDateTime(eventRow.get(4).getValue().toString());
             return new RFIDEvent(
-                    (eventRow.get(16).getValue() != null ? eventRow.get(16).getValue().toString() : null),
+                    (eventRow.get(15).getValue() != null ? eventRow.get(15).getValue().toString() : null),
                     (eventRow.get(1).getValue() != null ? eventRow.get(1).getValue().toString() : null),
                     (eventRow.get(2).getValue() != null ? eventRow.get(2).getValue().toString(): null),
                     (eventRow.get(12).getValue() != null ? eventRow.get(12).getValue().toString(): null),
                     eventTime,
-                    (eventRow.get(15).getValue() != null ? Integer.parseInt(eventRow.get(15).getValue().toString()): null),
                     (eventRow.get(7).getValue() != null ? eventRow.get(7).getValue().toString(): null),
                     (eventRow.get(8).getValue() != null ? Boolean.parseBoolean(eventRow.get(8).getValue().toString()): null),
                     (eventRow.get(3).getValue() != null ? eventRow.get(3).getValue().toString(): null),
@@ -142,7 +139,7 @@ public class EventServiceImpl implements EventServiceInterface {
     private Entity createEventEntity(String uniqueEventId, String readerId, Date eventTime, Boolean exitReader, String location, String productName,
                                     Double currRetailAmt, String upc, String storeNumber,
                                     String tagId, String register, int checkedCounter, Boolean matched) {
-        Entity eventEntity = new Entity("event", uniqueEventId);
+        Entity eventEntity = new Entity("rfidevent", uniqueEventId);
         //reader info
         eventEntity.setProperty("name_id", uniqueEventId);
         eventEntity.setProperty("curr_ts", new Date());

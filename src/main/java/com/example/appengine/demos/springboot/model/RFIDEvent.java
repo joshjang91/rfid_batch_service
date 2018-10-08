@@ -13,7 +13,6 @@ public class RFIDEvent {
     private String receiverId;
     private String storeNumber;
     private DateTime eventTime;
-    private Integer signal;
     private String location;
     private Boolean exitReader;
     private String upc;
@@ -23,14 +22,13 @@ public class RFIDEvent {
     private Boolean matched;
 
 
-    public RFIDEvent(String uniqueEventId, String tagId, String receiverId, String storeNumber, DateTime eventTime, Integer signal, String location,
+    public RFIDEvent(String uniqueEventId, String tagId, String receiverId, String storeNumber, DateTime eventTime, String location,
                      Boolean exitReader, String upc, String productName, Double currRetailAmt, int checkedCounter, Boolean matched) {
         this.uniqueEventId = uniqueEventId;
         this.tagId = tagId;
         this.receiverId = receiverId;
         this.storeNumber = storeNumber;
         this.eventTime = eventTime;
-        this.signal = signal;
         this.location = location;
         this.exitReader = exitReader;
         this.upc = upc;
@@ -42,14 +40,6 @@ public class RFIDEvent {
     }
 
     public String getUniqueEventId() { return uniqueEventId; }
-
-    public Integer getSignal() {
-        return signal;
-    }
-
-    public void setSignal(Integer signal) {
-        this.signal = signal;
-    }
 
     public String getTagId() {
         return tagId;

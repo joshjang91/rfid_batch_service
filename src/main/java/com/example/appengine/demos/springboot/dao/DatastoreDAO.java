@@ -20,21 +20,31 @@ public class DatastoreDAO {
      */
     public void writeEventToDS(Entity event) throws Exception {
         LOG.info(String.format("Writing event to datastore.  Tagid:   %s ", (String) event.getProperty("tag_id")));
+
         DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 
         Query.Filter propertyFilter =  new Query.FilterPredicate("name_id", Query.FilterOperator.EQUAL, event.getProperty("name_id"));
-        Query query = new Query("event").setFilter(propertyFilter);
+
+        Query query = new Query("rfidevent").setFilter(propertyFilter);
+
         List<Entity> events = datastore.prepare(query).asList(FetchOptions.Builder.withDefaults());
+
         if(events != null && events.size() > 0) {
+
             Entity retrievedEvent = events.get(0);
             if(retrievedEvent != null){
+
                 retrievedEvent.setProperty("checkedCounter", event.getProperty("checkedCounter"));
                 retrievedEvent.setProperty("matched", event.getProperty("matched"));
             }
-            datastore.put(retrievedEvent);
-        }else{
-            datastore.put(event);
-        }
 
+            datastore.put(retrievedEvent);
+
+        }else{
+
+            datastore.put(event);
+
+        }
     }
+
 }

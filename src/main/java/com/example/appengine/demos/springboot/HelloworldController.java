@@ -19,7 +19,7 @@ public class HelloworldController {
 
       try{
           eventService.processEventData();
-          return "We made it!";
+          return "We made it!\n";
       }
       catch (Exception e) {
           e.printStackTrace();
